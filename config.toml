@@ -5,7 +5,7 @@ timezone = "America/Santiago"      # los horarios de los slots se interpretan en
 default_cooldown_days = 6          # días mínimos antes de repetir una misma historia
 
 [account]
-tu_depilacion = "REEMPLAZA_CON_TU_IG_USER_ID"
+28765457449731233 = "REEMPLAZA_CON_TU_IG_USER_ID"
 login = "instagram"                # "instagram" (Business Login) | "facebook" (Facebook Login)
 api_version = "v23.0"              # súbela cuando Meta retire versiones antiguas
 poll_interval_s = 3
