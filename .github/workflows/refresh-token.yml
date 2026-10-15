@@ -1,0 +1,22 @@
+name: refresh-token
+on:
+  schedule:
+    - cron: "17 6 1 * *"   # día 1 de cada mes (el token dura 60 días)
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Renovar token y actualizar el secreto
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          # PAT con permiso de escribir secretos del repo (Actions secrets: write)
+          GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
+        run: igstories token-refresh --gh-secret IG_ACCESS_TOKEN --gh-repo "${{ github.repository }}"

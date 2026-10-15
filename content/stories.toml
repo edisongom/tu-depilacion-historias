@@ -1,0 +1,61 @@
+# Catálogo de historias. Cada una apunta a un JPEG de assets/ready (se genera con
+# `igstories prepare` desde assets/source). Etiquetas = tipo de contenido (ver slots en config.toml).
+#
+# Campos opcionales: priority (desempata), enabled, active_from/active_to (YYYY-MM-DD),
+# cooldown_days (distinto del global), note.
+
+[[story]]
+id = "precios-rostro-brazos"
+image = "precios-rostro-brazos.jpg"
+tags = ["precios"]
+
+[[story]]
+id = "precios-cuerpo-1"
+image = "precios-cuerpo-1.jpg"
+tags = ["precios"]
+
+[[story]]
+id = "precios-cuerpo-2"
+image = "precios-cuerpo-2.jpg"
+tags = ["precios"]
+
+[[story]]
+id = "combo-cara"
+image = "combo-cara.jpg"
+tags = ["precios"]
+priority = 1
+
+[[story]]
+id = "mito-vello-grueso"
+image = "mito-vello-grueso.jpg"
+tags = ["mitos"]
+
+[[story]]
+id = "mito-dejar-crecer"
+image = "mito-dejar-crecer.jpg"
+tags = ["mitos"]
+
+[[story]]
+id = "mito-afeitar-antes"
+image = "mito-afeitar-antes.jpg"
+tags = ["mitos"]
+
+[[story]]
+id = "cuidados-post"
+image = "cuidados-post.jpg"
+tags = ["cuidados"]
+
+[[story]]
+id = "preparacion"
+image = "preparacion.jpg"
+tags = ["cuidados"]
+
+[[story]]
+id = "como-reservar"
+image = "como-reservar.jpg"
+tags = ["info"]
+
+[[story]]
+id = "ubicacion-horario"
+image = "ubicacion-horario.jpg"
+tags = ["info"]

@@ -1,0 +1,69 @@
+# Configuración de igstories. Los secretos NO van aquí: usa variables de entorno
+# (IG_ACCESS_TOKEN y, opcionalmente, TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID).
+
+timezone = "America/Santiago"      # los horarios de los slots se interpretan en esta zona
+default_cooldown_days = 6          # días mínimos antes de repetir una misma historia
+
+[account]
+ig_user_id = "REEMPLAZA_CON_TU_IG_USER_ID"
+login = "instagram"                # "instagram" (Business Login) | "facebook" (Facebook Login)
+api_version = "v23.0"              # súbela cuando Meta retire versiones antiguas
+poll_interval_s = 3
+poll_timeout_s = 180
+max_retries = 4
+
+[hosting]
+# static: assets/ready ya está publicado en esta URL base (tu sitio, GitHub Pages, CDN...).
+# Con raw.githubusercontent.com (repo público): https://raw.githubusercontent.com/USUARIO/REPO/main/assets/ready
+provider = "static"
+base_url = "https://tudepilacion.cl/historias"
+preflight = true                   # HEAD previo: ¿responde 200 y es image/jpeg?
+
+# s3 / Cloudflare R2 (alternativa; requiere pip install "igstories[s3]"):
+# provider = "s3"
+# bucket = "mi-bucket"
+# prefix = "stories"
+# endpoint_url = "https://<account>.r2.cloudflarestorage.com"
+# public_base_url = "https://cdn.midominio.cl"
+
+[image]
+mode = "fit-blur"                  # fit-blur | fit-solid | cover (para originales que no son 9:16)
+safe_top = 250                     # px que cubre la interfaz de Instagram arriba...
+safe_bottom = 340                  # ...y abajo
+background = "#fff6f9"
+blur_radius = 40
+quality = 90
+
+[paths]
+stories = "content/stories.toml"
+source = "assets/source"
+ready = "assets/ready"
+history = "state/history.json"
+
+# ---------------------------------------------------------------- slots (horarios diarios)
+# Un slot es una publicación diaria. Puedes definir varios (p. ej. mañana y tarde).
+# "tags_by_weekday" elige el tipo de contenido según el día; "tags" es el valor por defecto.
+[[slots]]
+name = "midday"
+time = "12:30"
+days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+grace_minutes = 360                # si el cron se atrasa, publica hasta 6 h después
+max_attempts = 3
+
+[slots.tags_by_weekday]
+mon = ["precios"]
+tue = ["mitos"]
+wed = ["cuidados"]
+thu = ["precios"]
+fri = ["info"]
+sat = ["mitos"]
+sun = ["info"]
+
+# ---------------------------------------------------------------------- overrides (excepciones)
+# [[overrides]]
+# date = 2026-12-24
+# story = "navidad"        # fuerza una historia concreta ese día
+#
+# [[overrides]]
+# date = 2026-12-25
+# skip = true              # no publicar ese día
