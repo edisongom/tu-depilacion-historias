@@ -5,7 +5,7 @@ timezone = "America/Santiago"      # los horarios de los slots se interpretan en
 default_cooldown_days = 6          # días mínimos antes de repetir una misma historia
 
 [account]
-ig_user_id = "REEMPLAZA_CON_TU_IG_USER_ID"
+tu_depilacion = "REEMPLAZA_CON_TU_IG_USER_ID"
 login = "instagram"                # "instagram" (Business Login) | "facebook" (Facebook Login)
 api_version = "v23.0"              # súbela cuando Meta retire versiones antiguas
 poll_interval_s = 3
@@ -16,7 +16,7 @@ max_retries = 4
 # static: assets/ready ya está publicado en esta URL base (tu sitio, GitHub Pages, CDN...).
 # Con raw.githubusercontent.com (repo público): https://raw.githubusercontent.com/USUARIO/REPO/main/assets/ready
 provider = "static"
-base_url = "https://tudepilacion.cl/historias"
+base_url = "https://raw.githubusercontent.com/edisongom/tu-depilacion-historias/main/assets/ready"
 preflight = true                   # HEAD previo: ¿responde 200 y es image/jpeg?
 
 # s3 / Cloudflare R2 (alternativa; requiere pip install "igstories[s3]"):
