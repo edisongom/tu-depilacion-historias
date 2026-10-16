@@ -1,1 +1,19 @@
-{"version": 1, "entries": []}
+{
+  "version": 1,
+  "entries": [
+    {
+      "key": "manual:20261015T130515",
+      "date": "2026-10-15",
+      "slot": "manual",
+      "story_id": "precios-rostro-brazos",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18105561986363588",
+      "media_id": "18027192506881095",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4008582696885321472",
+      "publish_started_at": "2026-10-15T16:05:22+00:00",
+      "updated_at": "2026-10-15T16:05:25+00:00",
+      "error": null
+    }
+  ]
+}
