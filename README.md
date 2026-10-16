@@ -50,8 +50,30 @@ Los tests (sin red ni credenciales): `PYTHONPATH=src:tests python -m unittest di
 5. En GitHub: *Settings → Secrets and variables → Actions*: `IG_ACCESS_TOKEN`, y opcionalmente
    `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `GH_ADMIN_TOKEN` (PAT con *Secrets: write* para renovar el token).
 
-El token se renueva solo cada mes con `refresh-token.yml` (`igstories token-refresh --gh-secret IG_ACCESS_TOKEN`).
-El valor se pasa a `gh secret set` por stdin y nunca se imprime.
+### Renovación automática del token
+
+`refresh-token.yml` renueva el token los días 1 y 15 de cada mes y guarda el nuevo valor en el secreto
+`IG_ACCESS_TOKEN` (`igstories token-refresh --gh-secret IG_ACCESS_TOKEN`). El valor viaja por stdin a
+`gh secret set` y nunca se imprime. GitHub no deja que un workflow cambie sus propios secretos con el
+token por defecto, así que necesita un token personal acotado:
+
+1. github.com → foto de perfil → **Settings → Developer settings → Personal access tokens →
+   Fine-grained tokens → Generate new token**.
+2. *Repository access*: **Only select repositories** → `tu-depilacion-historias`.
+3. *Permissions → Repository permissions → **Secrets: Read and write*** (nada más).
+4. Genera, copia y guárdalo como secreto del repo con el nombre `GH_ADMIN_TOKEN`.
+5. Pruébalo: Actions → **refresh-token → Run workflow**. Debe terminar en verde.
+
+Si falla (token vencido del todo o `GH_ADMIN_TOKEN` mal configurado) el workflow termina en rojo y,
+si configuraste Telegram, te avisa.
+
+### Avisos por Telegram (opcional)
+
+1. En Telegram habla con **@BotFather** → `/newbot` → copia el token del bot.
+2. Escríbele cualquier mensaje a tu bot nuevo y abre
+   `https://api.telegram.org/bot<TOKEN>/getUpdates`; copia `chat.id`.
+3. Secretos del repo: `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID`. Recibirás los errores; para recibir
+   también los éxitos, añade `NOTIFY_SUCCESS: "1"` en el `env` de los workflows.
 
 ## Hosting de las imágenes
 
@@ -65,9 +87,36 @@ La API exige una **URL pública** al JPEG (≤ 8 MB). Opciones:
 
 `preflight = true` hace un HEAD antes de publicar para fallar con un mensaje claro si la URL no sirve.
 
+## Agregar imágenes sin tocar código
+
+1. Sube tus imágenes (JPG o PNG) a la carpeta `assets/source/`. Lo más simple es desde github.com:
+   repo → `assets/source` → **Add file → Upload files**.
+2. Listo. En el siguiente ciclo (≤30 min) el robot las convierte a 1080×1920 (`igstories prepare`), las
+   guarda en `assets/ready/` y las suma solas al catálogo con la etiqueta `libre`
+   (`[catalog] autodiscover`). **Las que nunca se han publicado salen primero**; después rota la menos
+   reciente, respetando `default_cooldown_days`.
+3. Para sacar una imagen de la rotación, bórrala de `assets/source/` y de `assets/ready/`.
+   Para darle texto de nota, prioridad, fechas de vigencia o etiquetas propias, agrégala en
+   `content/stories.toml` (la entrada manual manda sobre la automática).
+
+Si trabajas desde tu PC, haz siempre `git pull` antes de `git push`, porque el robot también sube cosas.
+
+## Horarios: fijos o aleatorios
+
+Cada `[[slots]]` puede usar `time = "12:30"` o `window = ["08:00", "11:00"]`. Con `window` la hora cambia
+cada día de forma pseudoaleatoria pero estable (se calcula con un hash de día+slot, así todas las
+ejecuciones coinciden). La configuración por defecto es:
+
+- `manana`: entre 08:00 y 11:00
+- `noche`: entre 20:00 y 23:00
+
+Entre una historia y la siguiente pasan siempre entre 9 y 15 horas. Como el cron corre cada 30 min,
+la publicación real ocurre hasta ~30 min después de la hora calculada. `igstories plan --days 7` te muestra
+las horas y las historias previstas.
+
 ## Referencia rápida
 
-- `config.toml`: `[account]`, `[hosting]`, `[image]`, `[[slots]]` (`time`, `days`, `tags`, `tags_by_weekday`,
+- `config.toml`: `[account]`, `[hosting]`, `[image]`, `[[slots]]` (`time` o `window`, `days`, `tags`, `tags_by_weekday`,
   `grace_minutes`, `max_attempts`), `[[overrides]]` (`date`, `slot`, `story`, `skip`).
 - `content/stories.toml`: `id`, `image`, `tags`, `priority`, `cooldown_days`, `active_from/active_to`, `enabled`.
 - Estados del historial: `pending → publishing → published`; `failed` (reintenta hasta `max_attempts`),
@@ -94,4 +143,5 @@ No uses librerías no oficiales de Instagram (violan los términos y arriesgan e
 - La reconciliación usa `GET /{ig-id}/stories`; confirma que está disponible con tu tipo de token.
 - No se ha probado con una cuenta real: haz la primera publicación con `igstories post ...` y vigílala.
 - Las historias de Instagram no admiten stickers/enlaces/música vía API.
-- Cuota: 100 publicaciones por API cada 24 h (de sobra para 1–3 al día).
+- Cuota: 50 publicaciones por API cada 24 h (de sobra para 1–3 al día).
+- Según la documentación de Meta, las historias por API solo funcionan con cuentas **Business** (no Creator).

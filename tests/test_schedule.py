@@ -108,3 +108,82 @@ class ScheduleTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WindowAndDiscoveryTests(unittest.TestCase):
+    def setUp(self):
+        self.root = make_project()
+        text = (self.root / "config.toml").read_text()
+        text = text.replace('time = "12:30"', 'window = ["08:00", "11:00"]')
+        text += '\n[[slots]]\nname = "noche"\nwindow = ["20:00", "23:00"]\n'
+        (self.root / "config.toml").write_text(text)
+        self.settings = load_settings(self.root / "config.toml")
+
+    def tearDown(self):
+        cleanup(self.root)
+
+    def test_window_time_is_stable_inside_window_and_varies(self):
+        from igstories.schedule import scheduled_time
+
+        morning, night = self.settings.slots
+        seen = set()
+        for i in range(60):
+            day = dt.date(2026, 10, 1) + dt.timedelta(days=i)
+            t = scheduled_time(morning, day)
+            self.assertEqual(t, scheduled_time(morning, day))  # estable
+            self.assertTrue(dt.time(8, 0) <= t <= dt.time(11, 0))
+            n = scheduled_time(night, day)
+            self.assertTrue(dt.time(20, 0) <= n <= dt.time(23, 0))
+            gap = (dt.datetime.combine(day, n) - dt.datetime.combine(day, t)).total_seconds() / 3600
+            self.assertTrue(9 <= gap <= 15)
+            seen.add(t)
+        self.assertGreater(len(seen), 20)
+
+    def test_due_slots_follow_the_random_time(self):
+        from igstories.schedule import scheduled_time
+
+        day = dt.date(2026, 10, 19)
+        t = scheduled_time(self.settings.slots[0], day)
+        before = santiago(2026, 10, 19, t.hour, t.minute) - dt.timedelta(minutes=1)
+        after = santiago(2026, 10, 19, t.hour, t.minute) + dt.timedelta(minutes=1)
+        self.assertEqual(due_slots(self.settings, before), [])
+        self.assertEqual([d.slot.name for d in due_slots(self.settings, after)], ["midday"])
+
+    def test_window_validation(self):
+        bad = self.root / "bad.toml"
+        text = (self.root / "config.toml").read_text().replace('window = ["20:00", "23:00"]', 'window = ["23:00", "20:00"]')
+        bad.write_text(text)
+        with self.assertRaises(ConfigError):
+            load_settings(bad)
+        bad.write_text(text.replace('window = ["23:00", "20:00"]', ""))
+        with self.assertRaises(ConfigError):
+            load_settings(bad)
+
+    def test_autodiscover_adds_new_images_and_dedupes(self):
+        from PIL import Image
+
+        ready = self.root / "assets" / "ready"
+        Image.new("RGB", (1080, 1920)).save(ready / "Mi Foto Nueva.jpg")
+        Image.new("RGB", (1080, 1920)).save(ready / "a1-.jpg")
+        cat = load_catalog(self.settings.stories_file, ready_dir=ready, auto_tag="libre")
+        ids = {s.id for s in cat}
+        self.assertEqual(len(cat), 5)
+        self.assertIn("mi-foto-nueva", ids)
+        self.assertEqual(cat.get("mi-foto-nueva").tags, ("libre",))
+        self.assertEqual(sum(1 for s in cat if s.image == "a1.jpg"), 1)  # no duplica los ya listados
+        self.assertEqual(len(load_catalog(self.settings.stories_file)), 3)  # sin ready_dir = como antes
+
+    def test_never_shown_images_come_first_and_shuffle_is_stable(self):
+        from igstories.schedule import pick_story
+
+        cat = load_catalog(self.settings.stories_file)
+        slot = self.settings.slots[1]  # "noche": sin tags
+        hist = History(Path("x"))
+        hist.put(Entry("2026-10-18:m", "2026-10-18", "m", "a1", "published"))
+        day = dt.date(2026, 10, 19)
+        first = pick_story(slot, day, cat, hist, shuffle=True)
+        self.assertIn(first.story.id, {"a2", "b1"})  # a1 está en cooldown
+        self.assertEqual(first.story.id, pick_story(slot, day, cat, hist, shuffle=True).story.id)
+        picks = {pick_story(slot, dt.date(2026, 11, 1) + dt.timedelta(days=i), cat, History(Path("x")), shuffle=True).story.id
+                 for i in range(20)}
+        self.assertGreater(len(picks), 1)  # el desempate varía con el día

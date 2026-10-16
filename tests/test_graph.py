@@ -143,3 +143,52 @@ class GraphClientTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TokenRefreshCliTests(unittest.TestCase):
+    def _run(self, refresh, run):
+        import argparse
+        from unittest import mock
+
+        from igstories import cli
+        from igstories.config import AccountConfig
+
+        settings = mock.Mock()
+        settings.account = AccountConfig(ig_user_id="1")
+        args = argparse.Namespace(gh_secret="IG_ACCESS_TOKEN", gh_repo="o/r", print_token=False)
+        with (
+            mock.patch.dict("os.environ", {"IG_ACCESS_TOKEN": "OLD"}),
+            mock.patch.object(cli, "refresh_long_lived_token", refresh),
+            mock.patch.object(cli.subprocess, "run", run),
+        ):
+            return cli.cmd_token_refresh(args, settings, None)
+
+    def test_success_passes_token_by_stdin_not_argv(self):
+        from igstories.graph import TokenInfo
+
+        calls = []
+
+        def run(cmd, **kw):
+            calls.append((cmd, kw))
+
+        rc = self._run(lambda tok: TokenInfo("NEW-SECRET", 5184000), run)
+        self.assertEqual(rc, 0)
+        cmd, kw = calls[0]
+        self.assertNotIn("NEW-SECRET", " ".join(cmd))
+        self.assertEqual(kw["input"], b"NEW-SECRET")
+
+    def test_gh_failure_returns_error_without_leaking_token(self):
+        import subprocess
+
+        from igstories.graph import TokenInfo
+
+        def run(cmd, **kw):
+            raise subprocess.CalledProcessError(1, cmd, stderr=b"HTTP 403")
+
+        self.assertEqual(self._run(lambda tok: TokenInfo("NEW", 1), run), 1)
+
+    def test_refresh_failure_returns_error(self):
+        def bad(tok):
+            raise GraphError("expirado", status=400, code=190)
+
+        self.assertEqual(self._run(bad, lambda *a, **k: None), 1)

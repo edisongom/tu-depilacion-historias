@@ -187,18 +187,38 @@ def cmd_history(args, settings: Settings, catalog: Catalog) -> int:
 
 
 def cmd_token_refresh(args, settings: Settings, catalog: Catalog) -> int:
+    notifier = notify.from_env()
     if settings.account.login != "instagram":
         print("La renovación automática aplica solo a Instagram Login.", file=sys.stderr)
         return 1
-    info = refresh_long_lived_token(get_access_token())
+    try:
+        info = refresh_long_lived_token(get_access_token())
+    except GraphError as exc:
+        msg = f"No se pudo renovar el token de Instagram: {exc}. Genera uno nuevo en Meta y actualiza el secreto."
+        print(f"ERROR: {msg}", file=sys.stderr)
+        notifier.notify(msg, level="error")
+        return 1
     days = info.expires_in / 86400
     print(f"Token renovado; vence en {days:.0f} días.")
     if args.gh_secret:
         cmd = ["gh", "secret", "set", args.gh_secret]
         if args.gh_repo:
             cmd += ["--repo", args.gh_repo]
-        subprocess.run(cmd, input=info.access_token.encode(), check=True)  # por stdin: no queda en argv
+        try:
+            # por stdin: el token no queda en la lista de argumentos ni en los logs
+            subprocess.run(cmd, input=info.access_token.encode(), check=True, capture_output=True)
+        except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+            detail = getattr(exc, "stderr", b"") or b""
+            msg = (
+                "El token se renovó pero NO se pudo guardar en el secreto de GitHub "
+                "(revisa el secreto GH_ADMIN_TOKEN y su permiso 'Secrets: write'). "
+                "El token anterior sigue siendo válido hasta que venza."
+            )
+            print(f"ERROR: {msg}\n{detail.decode(errors='replace').strip()}", file=sys.stderr)
+            notifier.notify(msg, level="error")
+            return 1
         print(f"Secreto {args.gh_secret} actualizado vía gh.")
+        notifier.notify(f"Token de Instagram renovado; vence en {days:.0f} días.", level="info")
     elif args.print_token:
         print(info.access_token)
     else:
@@ -261,7 +281,11 @@ def main(argv: list[str] | None = None) -> int:
     _setup_logging(args.log_level, args.json_logs)
     try:
         settings = load_settings(args.config)
-        catalog = load_catalog(settings.stories_file)
+        catalog = load_catalog(
+            settings.stories_file,
+            ready_dir=settings.ready_dir if settings.autodiscover else None,
+            auto_tag=settings.auto_tag,
+        )
         return args.func(args, settings, catalog)
     except ConfigError as exc:
         print(f"ERROR de configuración: {exc}", file=sys.stderr)

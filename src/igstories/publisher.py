@@ -30,6 +30,7 @@ from igstories.schedule import (
     OverlayHistory,
     due_slots,
     pick_story,
+    scheduled_time,
     slot_runs_on,
 )
 
@@ -69,26 +70,26 @@ def build_plan(
     """Simula el calendario de los próximos ``days`` días sin red ni token."""
     overlay = OverlayHistory(history)
     rows: list[PlanRow] = []
-    slots = sorted(settings.slots, key=lambda s: s.time)
     for offset in range(days):
         day = start + dt.timedelta(days=offset)
-        for slot in slots:
+        for slot in sorted(settings.slots, key=lambda s: scheduled_time(s, day)):
             if not slot_runs_on(slot, day):
                 continue
             existing = history.get(f"{day.isoformat()}:{slot.name}")
             if existing and existing.status in ("published", "unknown", "publishing"):
                 rows.append(
-                    PlanRow(day, slot.name, slot.time, existing.story_id, "history", existing.status)
+                    PlanRow(day, slot.name, scheduled_time(slot, day), existing.story_id, "history", existing.status)
                 )
                 continue
             pick = pick_story(
-                slot, day, catalog, overlay, settings.overrides, settings.default_cooldown_days
+                slot, day, catalog, overlay, settings.overrides, settings.default_cooldown_days,
+                settings.shuffle,
             )
             if pick.story:
                 overlay.record(pick.story.id, day)
             rows.append(
                 PlanRow(
-                    day, slot.name, slot.time,
+                    day, slot.name, scheduled_time(slot, day),
                     pick.story.id if pick.story else None, pick.reason, "planned",
                 )
             )
@@ -165,7 +166,7 @@ class Publisher:
         else:
             pick = pick_story(
                 slot, due.day, self.catalog, self.history, self.settings.overrides,
-                self.settings.default_cooldown_days,
+                self.settings.default_cooldown_days, self.settings.shuffle,
             )
             if pick.story is None:
                 msg = f"{key}: sin historia elegible ({pick.reason})"

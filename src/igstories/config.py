@@ -70,13 +70,14 @@ class ImageSpec:
 @dataclass(frozen=True)
 class Slot:
     name: str
-    time: dt.time
+    time: dt.time  # hora fija, o inicio de la ventana si hay window_end
     days: tuple[str, ...] = WEEKDAYS
     tags: tuple[str, ...] = ()
     tags_by_weekday: dict[str, tuple[str, ...]] = field(default_factory=dict)
     grace_minutes: int = 360  # ventana para "ponerse al día" si un ciclo de cron falla
     max_attempts: int = 3
     enabled: bool = True
+    window_end: dt.time | None = None  # si existe, la hora de cada día es aleatoria en [time, window_end]
 
 
 @dataclass(frozen=True)
@@ -101,6 +102,9 @@ class Settings:
     ready_dir: Path
     history_file: Path
     default_cooldown_days: int = 6
+    shuffle: bool = True  # desempate aleatorio (estable por día) entre historias igual de "nuevas"
+    autodiscover: bool = True  # toda imagen nueva en assets/ready entra sola al catálogo
+    auto_tag: str = "libre"
 
 
 def get_access_token(env: dict[str, str] | None = None) -> str:
@@ -226,10 +230,27 @@ def load_settings(path: str | Path) -> Settings:
         bad = [k for k in by_wd if k not in WEEKDAYS]
         if bad:
             errors.append(f"{where}.tags_by_weekday: días inválidos {bad}")
+        window = s.get("window")
+        window_end = None
+        if window is not None:
+            if not (isinstance(window, (list, tuple)) and len(window) == 2):
+                errors.append(f"{where}.window: usa ['HH:MM', 'HH:MM']")
+                start = dt.time(0, 0)
+            else:
+                start = _time(window[0], f"{where}.window[0]", errors)
+                window_end = _time(window[1], f"{where}.window[1]", errors)
+                if window_end <= start:
+                    errors.append(f"{where}.window: la hora final debe ser posterior a la inicial")
+        elif s.get("time") is None:
+            errors.append(f"{where}: define 'time' o 'window'")
+            start = dt.time(0, 0)
+        else:
+            start = _time(s.get("time"), f"{where}.time", errors)
         slots.append(
             Slot(
                 name=name,
-                time=_time(s.get("time"), f"{where}.time", errors),
+                time=start,
+                window_end=window_end,
                 days=_days(s.get("days", WEEKDAYS), f"{where}.days", errors),
                 tags=tuple(s.get("tags", ())),
                 tags_by_weekday=by_wd,
@@ -274,4 +295,7 @@ def load_settings(path: str | Path) -> Settings:
         ready_dir=root / paths.get("ready", "assets/ready"),
         history_file=root / paths.get("history", "state/history.json"),
         default_cooldown_days=int(raw.get("default_cooldown_days", 6)),
+        shuffle=bool(raw.get("shuffle", True)),
+        autodiscover=bool((raw.get("catalog") or {}).get("autodiscover", True)),
+        auto_tag=str((raw.get("catalog") or {}).get("auto_tag", "libre")),
     )

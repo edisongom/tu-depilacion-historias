@@ -3,6 +3,13 @@
 
 timezone = "America/Santiago"      # los horarios de los slots se interpretan en esta zona
 default_cooldown_days = 6          # días mínimos antes de repetir una misma historia
+shuffle = true                     # desempate aleatorio (estable por día) entre imágenes igual de "nuevas"
+
+[catalog]
+# Toda imagen que aparezca en assets/ready (o subas a assets/source) entra sola al catálogo,
+# sin editar content/stories.toml. Se publican primero las que nunca se han mostrado.
+autodiscover = true
+auto_tag = "libre"                 # etiqueta que reciben las imágenes descubiertas
 
 [account]
 ig_user_id = "28765457449731233"
@@ -41,23 +48,33 @@ ready = "assets/ready"
 history = "state/history.json"
 
 # ---------------------------------------------------------------- slots (horarios diarios)
-# Un slot es una publicación diaria. Puedes definir varios (p. ej. mañana y tarde).
-# "tags_by_weekday" elige el tipo de contenido según el día; "tags" es el valor por defecto.
+# Cada [[slots]] es una publicación diaria. Hay dos formas de fijar la hora:
+#   time   = "12:30"                  hora fija
+#   window = ["08:00", "11:00"]       hora aleatoria distinta cada día dentro de la ventana
+# Con las ventanas de abajo, entre una historia y la siguiente pasan siempre entre 9 y 15 horas.
+# Sin "tags" el slot elige entre TODAS las imágenes (las tuyas y las tarjetas de marca).
+# Para filtrar: tags = ["libre"] (solo tus imágenes) o tags_by_weekday (ver ejemplo al final).
 [[slots]]
-name = "midday"
-time = "12:30"
-days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-grace_minutes = 360                # si el cron se atrasa, publica hasta 6 h después
+name = "manana"
+window = ["08:00", "11:00"]
+grace_minutes = 240                # si el cron se atrasa, publica hasta 4 h después
 max_attempts = 3
 
-[slots.tags_by_weekday]
-mon = ["precios"]
-tue = ["mitos"]
-wed = ["cuidados"]
-thu = ["precios"]
-fri = ["info"]
-sat = ["mitos"]
-sun = ["info"]
+[[slots]]
+name = "noche"
+window = ["20:00", "23:00"]
+grace_minutes = 240
+max_attempts = 3
+
+# Ejemplo: contenido distinto según el día de la semana
+# [slots.tags_by_weekday]
+# mon = ["precios"]
+# tue = ["mitos"]
+# wed = ["cuidados"]
+# thu = ["precios"]
+# fri = ["info"]
+# sat = ["mitos"]
+# sun = ["info"]
 
 # ---------------------------------------------------------------------- overrides (excepciones)
 # [[overrides]]

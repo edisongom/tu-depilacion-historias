@@ -68,7 +68,26 @@ def _opt_date(value, where: str, errors: list[str]) -> dt.date | None:
         return None
 
 
-def load_catalog(path: str | Path) -> Catalog:
+def _discover(stories: list[Story], ready_dir: Path, auto_tag: str) -> list[Story]:
+    """Agrega como historias las imágenes de ``ready_dir`` que no están en stories.toml."""
+    used_images = {s.image for s in stories}
+    used_ids = {s.id for s in stories}
+    found: list[Story] = []
+    for img in sorted(Path(ready_dir).glob("*.jpg")):
+        if img.name in used_images:
+            continue
+        sid = re.sub(r"[^a-z0-9_-]+", "-", img.stem.lower()).strip("-_") or "imagen"
+        base, n = sid, 2
+        while sid in used_ids:
+            sid, n = f"{base}-{n}", n + 1
+        used_ids.add(sid)
+        found.append(Story(id=sid, image=img.name, tags=(auto_tag,), note="auto"))
+    return found
+
+
+def load_catalog(
+    path: str | Path, *, ready_dir: str | Path | None = None, auto_tag: str = "libre"
+) -> Catalog:
     path = Path(path)
     try:
         raw = tomllib.loads(path.read_text(encoding="utf-8"))
@@ -105,4 +124,6 @@ def load_catalog(path: str | Path) -> Catalog:
         )
     if errors:
         raise ConfigError("Catálogo inválido:\n  - " + "\n  - ".join(errors))
+    if ready_dir is not None:
+        stories += _discover(stories, Path(ready_dir), auto_tag)
     return Catalog(stories)

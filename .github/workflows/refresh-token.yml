@@ -1,7 +1,7 @@
 name: refresh-token
 on:
   schedule:
-    - cron: "17 6 1 * *"   # día 1 de cada mes (el token dura 60 días)
+    - cron: "17 6 1,15 * *"   # días 1 y 15: el token dura 60 días, así nunca vence
   workflow_dispatch:
 
 jobs:
@@ -17,6 +17,8 @@ jobs:
       - name: Renovar token y actualizar el secreto
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           # PAT con permiso de escribir secretos del repo (Actions secrets: write)
           GH_TOKEN: ${{ secrets.GH_ADMIN_TOKEN }}
         run: igstories token-refresh --gh-secret IG_ACCESS_TOKEN --gh-repo "${{ github.repository }}"
