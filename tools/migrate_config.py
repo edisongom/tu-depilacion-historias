@@ -33,7 +33,13 @@ def main() -> int:
         return 1
     old = OLD.read_text(encoding="utf-8") if OLD.exists() else ""
     if "[[slots]]" in old and "window" in old and "__" not in old:
-        print("config.toml ya tiene el formato nuevo; no se cambia nada.")
+        patched = re.sub(r"(?m)^(grace_minutes\s*=\s*)240\b", r"\g<1>600", old)
+        if patched != old:  # GitHub atrasa el cron: más margen de reintento
+            (ROOT / "config.old.toml").write_text(old, encoding="utf-8")
+            OLD.write_bytes(patched.encode("utf-8"))
+            print("config.toml ya tenía el formato nuevo; grace_minutes subido de 240 a 600.")
+        else:
+            print("config.toml ya tiene el formato nuevo; no se cambia nada.")
         return 0
     ig_id, base = find_id(old), find_base_url(old)
     missing = [n for n, v in (("ig_user_id", ig_id), ("base_url", base)) if not v]

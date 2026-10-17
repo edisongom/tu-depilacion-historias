@@ -11,6 +11,7 @@ from pathlib import Path
 from igstories.config import ConfigError
 
 _ID_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+VIDEO_SUFFIXES = (".mp4", ".mov")
 
 
 @dataclass(frozen=True)
@@ -24,6 +25,10 @@ class Story:
     active_to: dt.date | None = None
     cooldown_days: int | None = None  # None = usa default_cooldown_days
     note: str = ""
+
+    @property
+    def is_video(self) -> bool:
+        return self.image.lower().endswith(VIDEO_SUFFIXES)
 
     def is_active_on(self, day: dt.date) -> bool:
         if not self.enabled:
@@ -73,7 +78,8 @@ def _discover(stories: list[Story], ready_dir: Path, auto_tag: str) -> list[Stor
     used_images = {s.image for s in stories}
     used_ids = {s.id for s in stories}
     found: list[Story] = []
-    for img in sorted(Path(ready_dir).glob("*.jpg")):
+    files = sorted(p for p in Path(ready_dir).iterdir() if p.suffix.lower() in (".jpg", ".mp4"))
+    for img in files:
         if img.name in used_images:
             continue
         sid = re.sub(r"[^a-z0-9_-]+", "-", img.stem.lower()).strip("-_") or "imagen"

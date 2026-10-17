@@ -21,6 +21,7 @@ import logging
 import random
 import time
 from dataclasses import dataclass
+from urllib.parse import quote, quote_plus
 
 import requests
 
@@ -39,8 +40,10 @@ class GraphError(Exception):
         code: int | None = None,
         subcode: int | None = None,
         trace_id: str | None = None,
+        error_type: str | None = None,
     ):
         super().__init__(message)
+        self.error_type = error_type
         self.status = status
         self.code = code
         self.subcode = subcode
@@ -53,6 +56,19 @@ class GraphError(Exception):
     @property
     def is_transient(self) -> bool:
         return self.is_rate_limit or self.code in TRANSIENT_CODES or (self.status or 0) >= 500
+
+    def describe(self) -> str:
+        """Mensaje + códigos de Meta, útil para diagnosticar (nunca incluye el token)."""
+        parts = [str(self)]
+        extra = [
+            f"{n}={v}"
+            for n, v in (
+                ("http", self.status), ("code", self.code), ("subcode", self.subcode),
+                ("type", self.error_type), ("trace", self.trace_id),
+            )
+            if v is not None
+        ]
+        return f"{parts[0]} [{', '.join(extra)}]" if extra else parts[0]
 
     @property
     def is_auth(self) -> bool:
@@ -103,7 +119,11 @@ class GraphClient:
         return f"{self.base_url}{prefix}/{path.lstrip('/')}"
 
     def _redact(self, text: str) -> str:
-        return text.replace(self._token, "***") if self._token else text
+        if not self._token:
+            return text
+        for variant in {self._token, quote(self._token, safe=""), quote_plus(self._token)}:
+            text = text.replace(variant, "***")
+        return text
 
     def _backoff(self, attempt: int, *, rate_limited: bool, retry_after: str | None) -> float:
         if retry_after and retry_after.isdigit():
@@ -123,6 +143,7 @@ class GraphClient:
             code=err.get("code"),
             subcode=err.get("error_subcode"),
             trace_id=err.get("fbtrace_id"),
+            error_type=err.get("type"),
         )
 
     def _request(

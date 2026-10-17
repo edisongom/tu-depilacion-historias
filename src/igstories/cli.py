@@ -9,6 +9,7 @@ import argparse
 import datetime as dt
 import json
 import logging
+import os
 import subprocess
 import sys
 
@@ -97,7 +98,7 @@ def cmd_prepare(args, settings: Settings, catalog: Catalog) -> int:
     )
     for r in results:
         print(f"{r.action:<10}{r.source.name} -> {r.output.name}")
-    print(f"{len(results)} imagen(es) procesada(s).")
+    print(f"{len(results)} archivo(s) procesado(s).")
     return 0
 
 
@@ -134,7 +135,7 @@ def cmd_verify(args, settings: Settings, catalog: Catalog) -> int:
             for story in catalog:
                 url = provider.url_for(settings.ready_dir / story.image)
                 try:
-                    preflight(url)
+                    preflight(url, video=story.is_video)
                     print(f"ok  {url}")
                 except HostingError as exc:
                     errors.append(f"{story.id}: {exc}")
@@ -171,13 +172,80 @@ def cmd_status(args, settings: Settings, catalog: Catalog) -> int:
         print("Cuenta:", client.whoami().get("username", "?"))
         print("Cuota de publicación:", json.dumps(client.publishing_limit().get("data", []), ensure_ascii=False))
     except GraphError as exc:
-        print(f"ERROR de la API: {exc}", file=sys.stderr)
+        print(f"ERROR de la API: {exc.describe()}", file=sys.stderr)
         return 1
     hist = History.load(settings.history_file).entries()
     print(f"Historial: {len(hist)} entradas; últimas:")
     for e in hist[-args.last:]:
         print(f"  {e.date} {e.slot:<8} {e.status:<10} {e.story_id or '-':<22} {e.error or ''}")
     return 0
+
+
+def _token_problems(raw: str) -> list[str]:
+    """Defectos típicos de un token mal copiado. Nunca devuelve ni imprime el token."""
+    problems: list[str] = []
+    if not raw:
+        return ["la variable IG_ACCESS_TOKEN está vacía o no existe"]
+    if raw != raw.strip():
+        problems.append("tiene espacios o saltos de línea al principio/final")
+    if any(c.isspace() for c in raw.strip()):
+        problems.append("tiene espacios o saltos de línea en el medio")
+    if any(c in raw for c in "\"'"):
+        problems.append("contiene comillas (pégalo sin comillas)")
+    if not raw.isascii():
+        problems.append("contiene caracteres no ASCII (¿se copió con formato?)")
+    if len(raw.strip()) < 60:
+        problems.append(f"es demasiado corto ({len(raw.strip())} caracteres): ¿quedó cortado?")
+    if not raw.strip().startswith("IG"):
+        problems.append("no empieza con 'IG' (los tokens de Instagram Login empiezan así)")
+    return problems
+
+
+def cmd_doctor(args, settings: Settings, catalog: Catalog) -> int:
+    """Revisa de punta a punta lo que puede fallar al publicar y dice qué arreglar."""
+    failures = 0
+
+    def report(ok: bool, text: str, *, hard: bool = True) -> None:
+        nonlocal failures
+        print(f"{'OK    ' if ok else ('FALLA ' if hard else 'AVISO ')} {text}")
+        if not ok and hard:
+            failures += 1
+
+    n_vid = sum(1 for s in catalog if s.is_video)
+    report(True, f"configuración válida; ig_user_id={settings.account.ig_user_id}; "
+                 f"{len(catalog) - n_vid} imagen(es) y {n_vid} video(s) en el catálogo")
+
+    raw = os.environ.get("IG_ACCESS_TOKEN", "")
+    problems = _token_problems(raw)
+    report(not problems, f"token presente, {len(raw.strip())} caracteres" if not problems
+           else "token mal copiado: " + "; ".join(problems))
+
+    if raw.strip():
+        client = _client(settings)
+        try:
+            me = client.whoami()
+            report(True, f"Instagram responde: cuenta @{me.get('username', '?')}")
+            lim = client.publishing_limit().get("data", [])
+            report(True, f"cuota de publicación: {json.dumps(lim, ensure_ascii=False)}")
+        except GraphError as exc:
+            hint = " — el token no es válido o venció" if exc.is_auth else ""
+            report(False, f"Instagram rechazó la consulta: {exc.describe()}{hint}")
+
+    first = next(iter(catalog), None)
+    if first:
+        url = make_provider(settings.hosting).url_for(settings.ready_dir / first.image)
+        try:
+            preflight(url, video=first.is_video)
+            report(True, f"URL pública accesible: {url}")
+        except HostingError as exc:
+            report(False, f"URL pública con problemas: {exc}")
+
+    hist = History.load(settings.history_file).entries()
+    bad = [e for e in hist if e.status in ("failed", "unknown")][-3:]
+    for e in bad:
+        report(False, f"{e.date} {e.slot}: {e.status} — {e.error}", hard=False)
+    print("Todo en orden." if not failures else f"{failures} problema(s) encontrado(s).")
+    return 1 if failures else 0
 
 
 def cmd_history(args, settings: Settings, catalog: Catalog) -> int:
@@ -264,6 +332,9 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--last", type=int, default=7)
     s.set_defaults(func=cmd_status)
 
+    s = sub.add_parser("doctor", help="diagnóstico: token, conexión con Instagram, URL pública")
+    s.set_defaults(func=cmd_doctor)
+
     s = sub.add_parser("history", help="historial local")
     s.add_argument("--last", type=int, default=20)
     s.set_defaults(func=cmd_history)
@@ -291,7 +362,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR de configuración: {exc}", file=sys.stderr)
         return 2
     except GraphError as exc:
-        print(f"ERROR de la API: {exc}", file=sys.stderr)
+        print(f"ERROR de la API: {exc.describe()}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:  # pragma: no cover
         return 130

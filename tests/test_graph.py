@@ -192,3 +192,15 @@ class TokenRefreshCliTests(unittest.TestCase):
             raise GraphError("expirado", status=400, code=190)
 
         self.assertEqual(self._run(bad, lambda *a, **k: None), 1)
+
+
+class RedactionTests(unittest.TestCase):
+    def test_url_encoded_token_is_redacted_in_network_errors(self):
+        weird = 'IG"A A+B'
+        s = StubSession(requests.ConnectionError("fail url=/x?access_token=IG%22A+A%2BB y"))
+        c = GraphClient(base_url="https://g.test", api_version="v1", access_token=weird, ig_user_id="1",
+                        session=s, sleep=lambda x: None, max_retries=0)
+        with self.assertRaises(GraphError) as ctx:
+            c.whoami()
+        self.assertNotIn("A+A%2BB", str(ctx.exception))
+        self.assertIn("***", str(ctx.exception))

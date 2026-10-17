@@ -101,6 +101,26 @@ La API exige una **URL pública** al JPEG (≤ 8 MB). Opciones:
 
 Si trabajas desde tu PC, haz siempre `git pull` antes de `git push`, porque el robot también sube cosas.
 
+## Videos (.mp4)
+
+Sube tus videos a `assets/source/` igual que las imágenes. En `igstories prepare`:
+
+- Si ya cumplen lo que pide Meta (MP4, H.264, AAC o sin audio, 9:16, hasta 60 s, hasta 100 MB) se copian
+  tal cual.
+- Si no (formato horizontal, otro códec, más de 60 s) se convierten con `ffmpeg` a 1080×1920 y se recortan
+  a 60 s. GitHub Actions instala `ffmpeg` solo; en tu PC hay que instalarlo si quieres convertir ahí.
+- Desde el navegador de GitHub el límite de subida es de 25 MB por archivo.
+
+Entran al catálogo igual que las imágenes y se publican con `video_url`. Los videos tardan más en
+procesarse en Instagram (el programa espera hasta 7 min).
+
+## Diagnóstico: `igstories doctor`
+
+Revisa el token (largo, espacios, comillas, prefijo), pregunta a Instagram quién eres, consulta la cuota
+y comprueba que la URL pública de una imagen responda. Si algo falla, muestra el código de error de Meta.
+El workflow `publish-stories` lo ejecuta en cada ciclo, así que el registro de GitHub siempre trae el
+diagnóstico. Nunca imprime el token.
+
 ## Horarios: fijos o aleatorios
 
 Cada `[[slots]]` puede usar `time = "12:30"` o `window = ["08:00", "11:00"]`. Con `window` la hora cambia
@@ -110,8 +130,10 @@ ejecuciones coinciden). La configuración por defecto es:
 - `manana`: entre 08:00 y 11:00
 - `noche`: entre 20:00 y 23:00
 
-Entre una historia y la siguiente pasan siempre entre 9 y 15 horas. Como el cron corre cada 30 min,
-la publicación real ocurre hasta ~30 min después de la hora calculada. `igstories plan --days 7` te muestra
+Entre una historia y la siguiente pasan siempre entre 9 y 15 horas. GitHub Actions no garantiza el cron
+de 30 min: en la práctica puede espaciar las ejecuciones varias horas, por eso `grace_minutes = 600` deja
+reintentar hasta 10 h después. Para publicar a la hora exacta hay que disparar el workflow desde un
+servicio externo (cron-job.org con la API de GitHub `workflow_dispatch`). `igstories plan --days 7` te muestra
 las horas y las historias previstas.
 
 ## Referencia rápida

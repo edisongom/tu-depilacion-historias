@@ -11,6 +11,8 @@ import hashlib
 import json
 import logging
 import re
+import shutil
+import subprocess
 import unicodedata
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -22,7 +24,10 @@ from igstories.config import ImageSpec
 log = logging.getLogger(__name__)
 
 SOURCE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tif", ".tiff"}
+VIDEO_EXTS = {".mp4", ".mov", ".m4v"}
 MAX_BYTES = 8 * 1024 * 1024  # límite de Meta para imágenes de historias
+MAX_VIDEO_BYTES = 100 * 1024 * 1024
+MAX_VIDEO_SECONDS = 60
 RATIO = 9 / 16
 
 
@@ -82,10 +87,96 @@ def save_jpeg(img: Image.Image, dst: Path, quality: int) -> int:
         q -= 5
 
 
+def _file_hash(path: Path) -> str:
+    h = hashlib.sha1()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def _fingerprint(src: Path, spec: ImageSpec) -> str:
-    st = src.stat()
-    payload = json.dumps([asdict(spec), st.st_size, st.st_mtime_ns], sort_keys=True)
+    """Huella por contenido (no por fecha de modificación), estable entre máquinas."""
+    video = src.suffix.lower() in VIDEO_EXTS
+    payload = json.dumps(["video-v1" if video else asdict(spec), _file_hash(src)], sort_keys=True)
     return hashlib.sha1(payload.encode()).hexdigest()
+
+
+def probe_video(path: Path) -> dict | None:
+    """Datos del video vía ffprobe, o None si ffprobe no está disponible o falla."""
+    if not shutil.which("ffprobe"):
+        return None
+    proc = subprocess.run(
+        ["ffprobe", "-v", "error", "-print_format", "json", "-show_streams", "-show_format", str(path)],
+        capture_output=True, text=True, check=False,
+    )
+    if proc.returncode != 0:
+        return None
+    data = json.loads(proc.stdout or "{}")
+    streams = data.get("streams", [])
+    v = next((s for s in streams if s.get("codec_type") == "video"), None)
+    a = next((s for s in streams if s.get("codec_type") == "audio"), None)
+    if not v:
+        return None
+    rotate = 0
+    for sd in v.get("side_data_list", []) or []:
+        rotate = int(sd.get("rotation", rotate) or 0)
+    rotate = int(v.get("tags", {}).get("rotate", rotate) or rotate)
+    w, h = int(v["width"]), int(v["height"])
+    if abs(rotate) in (90, 270):
+        w, h = h, w
+    duration = float(data.get("format", {}).get("duration") or v.get("duration") or 0)
+    return {
+        "vcodec": v.get("codec_name"), "pix_fmt": v.get("pix_fmt"), "width": w, "height": h,
+        "acodec": a.get("codec_name") if a else None, "duration": duration,
+        "size": path.stat().st_size, "format": data.get("format", {}).get("format_name", ""),
+        "rotated": bool(rotate),
+    }
+
+
+def video_is_compliant(info: dict) -> bool:
+    """¿Cumple lo que pide Meta para historias? (MP4, H.264, AAC, 9:16, ≤60 s, ≤100 MB)."""
+    return (
+        info["vcodec"] == "h264"
+        and info["pix_fmt"] == "yuv420p"
+        and abs(info["width"] / info["height"] - RATIO) < 0.01
+        and info["width"] <= 1920
+        and info["duration"] <= MAX_VIDEO_SECONDS
+        and info["acodec"] in (None, "aac")
+        and info["size"] <= MAX_VIDEO_BYTES
+        and "mp4" in info["format"]
+        and not info["rotated"]
+    )
+
+
+def prepare_video(src: Path, out: Path, spec: ImageSpec) -> str:
+    """Copia el video si ya cumple; si no, lo convierte con ffmpeg. Devuelve la acción."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    info = probe_video(src)
+    if info and video_is_compliant(info):
+        shutil.copyfile(src, out)
+        return "copied"
+    if not shutil.which("ffmpeg"):
+        return "skipped-no-ffmpeg"
+    if info and info["duration"] > MAX_VIDEO_SECONDS:
+        log.warning("%s dura %.0f s; se recorta a %d s", src.name, info["duration"], MAX_VIDEO_SECONDS)
+    bg = spec.background.lstrip("#")
+    vf = (
+        f"scale={spec.width}:{spec.height}:force_original_aspect_ratio=decrease,"
+        f"pad={spec.width}:{spec.height}:(ow-iw)/2:(oh-ih)/2:color=0x{bg},setsar=1,fps=30"
+    )
+    cmd = [
+        "ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-t", str(MAX_VIDEO_SECONDS),
+        "-map", "0:v:0", "-map", "0:a:0?", "-vf", vf,
+        "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-pix_fmt", "yuv420p",
+        "-profile:v", "high", "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
+        "-movflags", "+faststart", str(out),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        out.unlink(missing_ok=True)
+        raise RuntimeError(f"ffmpeg falló con {src.name}: {proc.stderr.strip()[-300:]}")
+    return "transcoded"
 
 
 def prepare_all(
@@ -99,17 +190,32 @@ def prepare_all(
 
     results: list[PrepareResult] = []
     sources = sorted(
-        p for p in source_dir.rglob("*") if p.is_file() and p.suffix.lower() in SOURCE_EXTS
+        p
+        for p in source_dir.rglob("*")
+        if p.is_file() and p.suffix.lower() in SOURCE_EXTS | VIDEO_EXTS
     )
     for src in sources:
-        out = ready_dir / f"{slugify(src.stem)}.jpg"
+        is_video = src.suffix.lower() in VIDEO_EXTS
+        out = ready_dir / f"{slugify(src.stem)}{'.mp4' if is_video else '.jpg'}"
         fp = _fingerprint(src, spec)
         existed = out.exists()
         if existed and not force and manifest.get(out.name) == fp:
             results.append(PrepareResult(src, out, "unchanged"))
             continue
-        with Image.open(src) as im:
-            save_jpeg(render(im, spec), out, spec.quality)
+        if is_video:
+            try:
+                action = prepare_video(src, out, spec)
+            except RuntimeError as exc:  # un video malo no debe frenar al resto
+                log.error("%s", exc)
+                results.append(PrepareResult(src, out, "error"))
+                continue
+            if action == "skipped-no-ffmpeg":
+                log.warning("%s necesita conversión pero no hay ffmpeg instalado; se omite", src.name)
+                results.append(PrepareResult(src, out, action))
+                continue
+        else:
+            with Image.open(src) as im:
+                save_jpeg(render(im, spec), out, spec.quality)
         manifest[out.name] = fp
         results.append(PrepareResult(src, out, "updated" if existed else "created"))
         log.info("%s -> %s", src.name, out.name)
@@ -123,6 +229,13 @@ def inspect_ready(path: Path) -> list[str]:
     problems: list[str] = []
     if not path.exists():
         return [f"no existe {path.name}"]
+    if path.suffix.lower() == ".mp4":
+        if path.stat().st_size > MAX_VIDEO_BYTES:
+            problems.append("el video pesa más de 100 MB")
+        info = probe_video(path)
+        if info and not video_is_compliant(info):
+            problems.append("proporción o códec fuera de lo recomendado (usa `igstories prepare`)")
+        return problems
     if path.suffix.lower() not in (".jpg", ".jpeg"):
         problems.append("Meta solo acepta JPEG para imágenes de historias")
     if path.stat().st_size > MAX_BYTES:

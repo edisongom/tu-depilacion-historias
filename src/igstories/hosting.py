@@ -20,7 +20,9 @@ import requests
 from igstories.config import HostingConfig
 
 log = logging.getLogger(__name__)
-MAX_BYTES = 8 * 1024 * 1024
+MAX_BYTES = 8 * 1024 * 1024  # imágenes
+MAX_VIDEO_BYTES = 100 * 1024 * 1024
+VIDEO_TYPES = {"video/mp4", "video/quicktime"}
 
 
 class HostingError(RuntimeError):
@@ -67,7 +69,10 @@ class S3UrlProvider:
             str(local_file),
             self.bucket,
             key,
-            ExtraArgs={"ContentType": "image/jpeg", "CacheControl": "public, max-age=3600"},
+            ExtraArgs={
+                "ContentType": "video/mp4" if local_file.suffix.lower() == ".mp4" else "image/jpeg",
+                "CacheControl": "public, max-age=3600",
+            },
         )
         return f"{self.public_base_url}/{quote(key)}"
 
@@ -80,8 +85,14 @@ def make_provider(cfg: HostingConfig) -> UrlProvider:
     raise HostingError(f"Proveedor de hosting desconocido: {cfg.provider}")
 
 
-def preflight(url: str, *, session: requests.Session | None = None, timeout: float = 15.0) -> None:
-    """Comprueba que la URL responde 200, es JPEG y no excede 8 MB (Meta la descargará luego)."""
+def preflight(
+    url: str,
+    *,
+    video: bool = False,
+    session: requests.Session | None = None,
+    timeout: float = 15.0,
+) -> None:
+    """Comprueba que la URL responde 200 con el tipo y peso correctos (Meta la descargará luego)."""
     http = session or requests.Session()
     try:
         resp = http.head(url, timeout=timeout, allow_redirects=True)
@@ -94,10 +105,16 @@ def preflight(url: str, *, session: requests.Session | None = None, timeout: flo
     if resp.status_code not in (200, 206):
         raise HostingError(f"{url} respondió HTTP {resp.status_code}")
     ctype = resp.headers.get("Content-Type", "").split(";")[0].strip().lower()
-    if ctype != "image/jpeg":
+    if video:
+        if ctype == "application/octet-stream":
+            log.warning("%s se sirve como application/octet-stream; si Meta lo rechaza, cambia de hosting", url)
+        elif ctype not in VIDEO_TYPES:
+            raise HostingError(f"{url} sirve Content-Type {ctype or 'desconocido'}, se espera video/mp4")
+    elif ctype != "image/jpeg":
         raise HostingError(f"{url} sirve Content-Type {ctype or 'desconocido'}, se espera image/jpeg")
+    limit = MAX_VIDEO_BYTES if video else MAX_BYTES
     length = resp.headers.get("Content-Length")
-    if length and resp.status_code == 200 and int(length) > MAX_BYTES:
-        raise HostingError(f"{url} pesa {int(length) / 1e6:.1f} MB (máximo 8 MB)")
+    if length and resp.status_code == 200 and int(length) > limit:
+        raise HostingError(f"{url} pesa {int(length) / 1e6:.1f} MB (máximo {limit // 2**20} MB)")
     if resp.history:
         log.warning("%s redirige; Meta podría no seguir redirecciones. Usa la URL final.", url)

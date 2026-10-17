@@ -57,13 +57,13 @@ history = "state/history.json"
 [[slots]]
 name = "manana"
 window = ["08:00", "11:00"]
-grace_minutes = 240                # si el cron se atrasa, publica hasta 4 h después
+grace_minutes = 600                # si el cron se atrasa, publica hasta 4 h después
 max_attempts = 3
 
 [[slots]]
 name = "noche"
 window = ["20:00", "23:00"]
-grace_minutes = 240
+grace_minutes = 600
 max_attempts = 3
 
 # Ejemplo: contenido distinto según el día de la semana

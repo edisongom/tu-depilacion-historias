@@ -60,7 +60,7 @@ class FakeGraph:
                 if path.startswith("/static/") and fake.ready_dir:
                     f = fake.ready_dir / path.removeprefix("/static/")
                     if f.exists():
-                        return self._send(200, f.read_bytes(), "image/jpeg")
+                        return self._send(200, f.read_bytes(), "video/mp4" if f.suffix == ".mp4" else "image/jpeg")
                     return self._send(404, b"nope", "text/plain")
                 fake._handle(self, "GET", path, self._params())
 
@@ -116,7 +116,7 @@ class FakeGraph:
             return h._send(200, forced)
 
         if op == "create":
-            if params.get("media_type") != "STORIES" or not params.get("image_url"):
+            if params.get("media_type") != "STORIES" or not (params.get("image_url") or params.get("video_url")):
                 return h._send(400, {"error": {"message": "bad params", "code": 100}})
             self._n += 1
             return h._send(200, {"id": f"container-{self._n}"})

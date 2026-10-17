@@ -195,15 +195,20 @@ class Publisher:
                 raise HostingError(f"No existe la imagen preparada: {local}")
             url = self.urls.url_for(local)
             if self.check_url:
-                preflight(url)
+                preflight(url, video=story.is_video)
             if dry_run:
                 return Outcome(entry.key, story.id, "dry-run", url)
 
-            entry.container_id = self.client.create_story_container(image_url=url)
+            if story.is_video:
+                entry.container_id = self.client.create_story_container(video_url=url)
+            else:
+                entry.container_id = self.client.create_story_container(image_url=url)
             self.history.put(entry)
             self.history.save()
             self.client.wait_until_ready(
-                entry.container_id, interval=cfg.poll_interval_s, timeout=cfg.poll_timeout_s
+                entry.container_id,
+                interval=cfg.poll_interval_s,
+                timeout=max(cfg.poll_timeout_s, 420.0) if story.is_video else cfg.poll_timeout_s,
             )
 
             entry.status = "publishing"
@@ -227,17 +232,18 @@ class Publisher:
 
     # ---------------------------------------------------------------------- fallos / estado
     def _failed(self, entry: Entry, exc: Exception, max_attempts: int) -> Outcome:
-        entry.status, entry.error = "failed", str(exc)[:500]
+        detail = exc.describe() if isinstance(exc, GraphError) else str(exc)
+        entry.status, entry.error = "failed", detail[:500]
         self.history.put(entry)
         self.history.save()
-        log.error("Fallo %s (intento %d/%d): %s", entry.key, entry.attempts, max_attempts, exc)
+        log.error("Fallo %s (intento %d/%d): %s", entry.key, entry.attempts, max_attempts, detail)
         auth = isinstance(exc, GraphError) and exc.is_auth
         if auth or entry.attempts >= max_attempts:
             hint = " — el token es inválido o expiró; renuévalo" if auth else ""
             self.notifier.notify(
-                f"No se pudo publicar {entry.story_id} ({entry.key}): {exc}{hint}", level="error"
+                f"No se pudo publicar {entry.story_id} ({entry.key}): {detail}{hint}", level="error"
             )
-        return Outcome(entry.key, entry.story_id, "failed", str(exc))
+        return Outcome(entry.key, entry.story_id, "failed", detail)
 
     def _ambiguous(self, entry: Entry, exc: Exception) -> Outcome:
         entry.status, entry.error = "publishing", f"resultado ambiguo: {exc}"
