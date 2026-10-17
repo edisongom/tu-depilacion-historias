@@ -28,6 +28,20 @@
       "publish_started_at": null,
       "updated_at": "2026-10-17T01:15:11+00:00",
       "error": "Failed to decode"
+    },
+    {
+      "key": "2026-10-17:manana",
+      "date": "2026-10-17",
+      "slot": "manana",
+      "story_id": "combo-cara",
+      "status": "failed",
+      "attempts": 1,
+      "container_id": null,
+      "media_id": null,
+      "permalink": null,
+      "publish_started_at": null,
+      "updated_at": "2026-10-17T13:54:20+00:00",
+      "error": "Failed to decode"
     }
   ]
 }
