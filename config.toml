@@ -12,7 +12,7 @@ autodiscover = true
 auto_tag = "libre"                 # etiqueta que reciben las imágenes descubiertas
 
 [account]
-ig_user_id = "28765457449731233"
+ig_user_id = "17841440907631994"
 login = "instagram"                # "instagram" (Business Login) | "facebook" (Facebook Login)
 api_version = "v23.0"              # súbela cuando Meta retire versiones antiguas
 poll_interval_s = 3
