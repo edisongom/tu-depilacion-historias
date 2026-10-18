@@ -63,13 +63,13 @@
       "slot": "manana",
       "story_id": "combo-cara",
       "status": "failed",
-      "attempts": 2,
+      "attempts": 3,
       "container_id": null,
       "media_id": null,
       "permalink": null,
       "publish_started_at": null,
-      "updated_at": "2026-10-18T19:23:11+00:00",
-      "error": "Failed to decode [http=400, code=190, type=OAuthException, trace=A4y2jdfgyv-wvyWeiL7aHpQ]"
+      "updated_at": "2026-10-18T21:46:59+00:00",
+      "error": "Failed to decode [http=400, code=190, type=OAuthException, trace=A_HbOzSTw1Px0M7j9Q55EC5]"
     }
   ]
 }
