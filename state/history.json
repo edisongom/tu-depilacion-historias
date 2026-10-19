@@ -90,14 +90,14 @@
       "date": "2026-10-19",
       "slot": "manana",
       "story_id": "combo-cara",
-      "status": "failed",
-      "attempts": 1,
-      "container_id": null,
-      "media_id": null,
-      "permalink": null,
-      "publish_started_at": null,
-      "updated_at": "2026-10-19T17:43:55+00:00",
-      "error": "Failed to decode [http=400, code=190, type=OAuthException, trace=Ay3iSwllMkvSKkb1vwI-o-j]"
+      "status": "published",
+      "attempts": 2,
+      "container_id": "18106045580363588",
+      "media_id": "18058285286799073",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4011569523703435688",
+      "publish_started_at": "2026-10-19T18:59:40+00:00",
+      "updated_at": "2026-10-19T18:59:44+00:00",
+      "error": null
     }
   ]
 }
