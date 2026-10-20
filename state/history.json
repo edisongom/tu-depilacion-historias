@@ -98,6 +98,20 @@
       "publish_started_at": "2026-10-19T18:59:40+00:00",
       "updated_at": "2026-10-19T18:59:44+00:00",
       "error": null
+    },
+    {
+      "key": "2026-10-19:noche",
+      "date": "2026-10-19",
+      "slot": "noche",
+      "story_id": "mito-afeitar-antes",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18106068371363588",
+      "media_id": "18465633325186495",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4011757437556974889",
+      "publish_started_at": "2026-10-20T01:13:01+00:00",
+      "updated_at": "2026-10-20T01:13:03+00:00",
+      "error": null
     }
   ]
 }
