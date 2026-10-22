@@ -154,6 +154,20 @@
       "publish_started_at": "2026-10-21T18:14:38+00:00",
       "updated_at": "2026-10-21T18:14:43+00:00",
       "error": null
+    },
+    {
+      "key": "2026-10-21:noche",
+      "date": "2026-10-21",
+      "slot": "noche",
+      "story_id": "como-reservar",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18106290614363588",
+      "media_id": "17992655928021530",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4013188402530599023",
+      "publish_started_at": "2026-10-22T00:36:05+00:00",
+      "updated_at": "2026-10-22T00:36:08+00:00",
+      "error": null
     }
   ]
 }
