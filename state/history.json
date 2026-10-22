@@ -168,6 +168,20 @@
       "publish_started_at": "2026-10-22T00:36:05+00:00",
       "updated_at": "2026-10-22T00:36:08+00:00",
       "error": null
+    },
+    {
+      "key": "2026-10-22:manana",
+      "date": "2026-10-22",
+      "slot": "manana",
+      "story_id": "18037729973777045",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18106357976363588",
+      "media_id": "18110872403103175",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4013640536623780968",
+      "publish_started_at": "2026-10-22T15:34:39+00:00",
+      "updated_at": "2026-10-22T15:34:44+00:00",
+      "error": null
     }
   ]
 }
