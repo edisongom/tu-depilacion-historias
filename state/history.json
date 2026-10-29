@@ -350,6 +350,20 @@
       "publish_started_at": "2026-10-29T06:23:40+00:00",
       "updated_at": "2026-10-29T06:23:46+00:00",
       "error": null
+    },
+    {
+      "key": "2026-10-29:manana",
+      "date": "2026-10-29",
+      "slot": "manana",
+      "story_id": "mito-vello-grueso",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18107333018363588",
+      "media_id": "18116207828108979",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4018833387628986904",
+      "publish_started_at": "2026-10-29T19:31:40+00:00",
+      "updated_at": "2026-10-29T19:31:43+00:00",
+      "error": null
     }
   ]
 }
