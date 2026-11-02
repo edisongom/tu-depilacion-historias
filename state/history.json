@@ -462,6 +462,20 @@
       "publish_started_at": "2026-11-02T02:21:25+00:00",
       "updated_at": "2026-11-02T02:21:27+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-02:manana",
+      "date": "2026-11-02",
+      "slot": "manana",
+      "story_id": "precios-rostro-brazos",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18107781206363588",
+      "media_id": "17990929712878526",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4021754264828869376",
+      "publish_started_at": "2026-11-02T20:14:56+00:00",
+      "updated_at": "2026-11-02T20:14:58+00:00",
+      "error": null
     }
   ]
 }
