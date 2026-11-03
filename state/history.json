@@ -490,6 +490,20 @@
       "publish_started_at": "2026-11-03T02:36:12+00:00",
       "updated_at": "2026-11-03T02:36:16+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-03:manana",
+      "date": "2026-11-03",
+      "slot": "manana",
+      "story_id": "mito-afeitar-antes",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18107865050363588",
+      "media_id": "18036322412907667",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4022402595008339377",
+      "publish_started_at": "2026-11-03T17:43:02+00:00",
+      "updated_at": "2026-11-03T17:43:04+00:00",
+      "error": null
     }
   ]
 }
