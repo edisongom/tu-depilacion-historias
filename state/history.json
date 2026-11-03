@@ -476,6 +476,20 @@
       "publish_started_at": "2026-11-02T20:14:56+00:00",
       "updated_at": "2026-11-02T20:14:58+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-02:noche",
+      "date": "2026-11-02",
+      "slot": "noche",
+      "story_id": "combo-cara",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18107801471363588",
+      "media_id": "18650425942006823",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4021946163171255350",
+      "publish_started_at": "2026-11-03T02:36:12+00:00",
+      "updated_at": "2026-11-03T02:36:16+00:00",
+      "error": null
     }
   ]
 }
