@@ -588,6 +588,20 @@
       "publish_started_at": "2026-11-06T17:24:30+00:00",
       "updated_at": "2026-11-06T17:24:36+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-06:noche",
+      "date": "2026-11-06",
+      "slot": "noche",
+      "story_id": "17998312343835047",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18108191426363588",
+      "media_id": "18379857304246340",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4024836656249585810",
+      "publish_started_at": "2026-11-07T02:19:20+00:00",
+      "updated_at": "2026-11-07T02:19:26+00:00",
+      "error": null
     }
   ]
 }
