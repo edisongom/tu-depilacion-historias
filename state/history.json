@@ -728,6 +728,20 @@
       "publish_started_at": "2026-11-12T02:51:10+00:00",
       "updated_at": "2026-11-12T02:51:17+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-12:manana",
+      "date": "2026-11-12",
+      "slot": "manana",
+      "story_id": "mito-vello-grueso",
+      "status": "failed",
+      "attempts": 1,
+      "container_id": "18108827750363588",
+      "media_id": null,
+      "permalink": null,
+      "publish_started_at": "2026-11-12T18:49:14+00:00",
+      "updated_at": "2026-11-12T18:49:15+00:00",
+      "error": "The requested resource does not exist [http=400, code=24, subcode=2207006, type=OAuthException, trace=A2BLGovlVkP35yqrziRjEce]"
     }
   ]
 }
