@@ -742,6 +742,20 @@
       "publish_started_at": "2026-11-12T18:49:14+00:00",
       "updated_at": "2026-11-12T18:49:15+00:00",
       "error": "The requested resource does not exist [http=400, code=24, subcode=2207006, type=OAuthException, trace=A2BLGovlVkP35yqrziRjEce]"
+    },
+    {
+      "key": "2026-11-12:noche",
+      "date": "2026-11-12",
+      "slot": "noche",
+      "story_id": "mito-vello-grueso",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18108847757363588",
+      "media_id": "18504897673098742",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4029119369481296627",
+      "publish_started_at": "2026-11-13T00:08:04+00:00",
+      "updated_at": "2026-11-13T00:08:07+00:00",
+      "error": null
     }
   ]
 }
