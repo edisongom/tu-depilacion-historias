@@ -798,6 +798,20 @@
       "publish_started_at": "2026-11-14T16:01:59+00:00",
       "updated_at": "2026-11-14T16:02:05+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-14:noche",
+      "date": "2026-11-14",
+      "slot": "noche",
+      "story_id": "cuidados-post",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109110815363588",
+      "media_id": "18175152241461983",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4030779084405818521",
+      "publish_started_at": "2026-11-15T07:05:38+00:00",
+      "updated_at": "2026-11-15T07:05:40+00:00",
+      "error": null
     }
   ]
 }
