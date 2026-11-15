@@ -812,6 +812,20 @@
       "publish_started_at": "2026-11-15T07:05:38+00:00",
       "updated_at": "2026-11-15T07:05:40+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-15:manana",
+      "date": "2026-11-15",
+      "slot": "manana",
+      "story_id": "mito-dejar-crecer",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109151492363588",
+      "media_id": "18120790451043317",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4031008882679947167",
+      "publish_started_at": "2026-11-15T14:42:09+00:00",
+      "updated_at": "2026-11-15T14:42:12+00:00",
+      "error": null
     }
   ]
 }
