@@ -826,6 +826,20 @@
       "publish_started_at": "2026-11-15T14:42:09+00:00",
       "updated_at": "2026-11-15T14:42:12+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-15:noche",
+      "date": "2026-11-15",
+      "slot": "noche",
+      "story_id": "precios-cuerpo-1",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109198004363588",
+      "media_id": "17990241707883302",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4031299382281066308",
+      "publish_started_at": "2026-11-16T00:19:24+00:00",
+      "updated_at": "2026-11-16T00:19:27+00:00",
+      "error": null
     }
   ]
 }
