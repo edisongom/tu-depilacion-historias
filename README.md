@@ -114,6 +114,19 @@ Sube tus videos a `assets/source/` igual que las imágenes. En `igstories prepar
 Entran al catálogo igual que las imágenes y se publican con `video_url`. Los videos tardan más en
 procesarse en Instagram (el programa espera hasta 7 min).
 
+## Reel semanal (feed)
+
+Un slot con `format = "reel"` publica un **reel en el feed** (no una historia) con la descripción de
+`[reels].caption`. El de este repo sale **los jueves a las 20:00** hora de Chile (`jueves-reel`).
+
+1. Sube los `.mp4` (9:16, H.264, ≤60 s) a `assets/reels/` (github.com → `assets/reels` → **Add file → Upload files**).
+   No pasan por `prepare` ni entran a la rotación de historias.
+2. Salen en orden alfabético y **nunca se repiten**. Si se acaban, ese jueves no sale nada y llega un aviso.
+3. Para una descripción distinta en un reel, sube un `.txt` con el mismo nombre (`01-x.mp4` → `01-x.txt`).
+4. `igstories plan --days 30` muestra qué reel sale cada jueves; `igstories verify` avisa si quedan menos de 4.
+
+La API no permite elegir música de Instagram: el reel sale con el audio que traiga el archivo.
+
 ## Diagnóstico: `igstories doctor`
 
 Revisa el token (largo, espacios, comillas, prefijo), pregunta a Instagram quién eres, consulta la cuota

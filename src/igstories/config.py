@@ -78,6 +78,16 @@ class Slot:
     max_attempts: int = 3
     enabled: bool = True
     window_end: dt.time | None = None  # si existe, la hora de cada día es aleatoria en [time, window_end]
+    format: str = "story"  # "story" (historia) | "reel" (reel en el feed, desde [reels].dir)
+
+
+@dataclass(frozen=True)
+class ReelsConfig:
+    dir: Path  # carpeta con los .mp4 listos para reel (no pasan por prepare)
+    base_url: str = ""  # URL pública de esa carpeta
+    caption: str = ""  # descripción por defecto; <video>.txt al lado del video la reemplaza
+    share_to_feed: bool = True
+    music_dir: Path | None = None  # si hay canciones aquí, los reels sin audio reciben una
 
 
 @dataclass(frozen=True)
@@ -105,6 +115,7 @@ class Settings:
     shuffle: bool = True  # desempate aleatorio (estable por día) entre historias igual de "nuevas"
     autodiscover: bool = True  # toda imagen nueva en assets/ready entra sola al catálogo
     auto_tag: str = "libre"
+    reels: ReelsConfig | None = None
 
 
 def get_access_token(env: dict[str, str] | None = None) -> str:
@@ -257,8 +268,11 @@ def load_settings(path: str | Path) -> Settings:
                 grace_minutes=int(s.get("grace_minutes", 360)),
                 max_attempts=int(s.get("max_attempts", 3)),
                 enabled=bool(s.get("enabled", True)),
+                format=str(s.get("format", "story")),
             )
         )
+        if slots[-1].format not in ("story", "reel"):
+            errors.append(f"{where}.format debe ser 'story' o 'reel'")
     if not slots:
         errors.append("Define al menos un [[slots]]")
 
@@ -277,6 +291,21 @@ def load_settings(path: str | Path) -> Settings:
                 skip=bool(o.get("skip", False)),
             )
         )
+
+    r = raw.get("reels")
+    reels = None
+    if r is not None:
+        reels = ReelsConfig(
+            dir=root / str(r.get("dir", "assets/reels")),
+            base_url=str(r.get("base_url", "")).rstrip("/"),
+            caption=str(r.get("caption", "")).strip(),
+            share_to_feed=bool(r.get("share_to_feed", True)),
+            music_dir=(root / str(r["music_dir"])) if r.get("music_dir") else None,
+        )
+        if not reels.base_url:
+            errors.append("reels.base_url es obligatorio")
+    if any(sl.format == "reel" for sl in slots) and reels is None:
+        errors.append("hay un slot con format = 'reel' pero falta la sección [reels]")
 
     paths = raw.get("paths", {})
     if errors:
@@ -298,4 +327,5 @@ def load_settings(path: str | Path) -> Settings:
         shuffle=bool(raw.get("shuffle", True)),
         autodiscover=bool((raw.get("catalog") or {}).get("autodiscover", True)),
         auto_tag=str((raw.get("catalog") or {}).get("auto_tag", "libre")),
+        reels=reels,
     )

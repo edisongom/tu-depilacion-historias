@@ -102,6 +102,34 @@ def cmd_prepare(args, settings: Settings, catalog: Catalog) -> int:
     return 0
 
 
+def cmd_reels_music(args, settings: Settings, catalog: Catalog) -> int:
+    """Pone música a los reels que no tienen audio (Instagram no deja elegirla por API)."""
+    from igstories import reels as reelmod
+
+    cfg = settings.reels
+    if cfg is None or cfg.music_dir is None:
+        print("Sin [reels].music_dir configurado; nada que hacer.")
+        return 0
+    tracks = reelmod.list_music(cfg.music_dir)
+    if not tracks:
+        print(f"ERROR  no hay canciones en {cfg.music_dir}", file=sys.stderr)
+        return 1
+    done = 0
+    for video in reelmod.list_reels(cfg):
+        info = images.probe_video(video)
+        if info is None:
+            print(f"ERROR  no se pudo leer {video.name} (¿falta ffprobe?)", file=sys.stderr)
+            return 1
+        if info["acodec"] and not args.force:
+            continue
+        track = reelmod.pick_music(video, tracks)
+        reelmod.add_music(video, track, info["duration"])
+        print(f"musica    {video.name} <- {track.name}")
+        done += 1
+    print(f"{done} reel(s) con música nueva.")
+    return 0
+
+
 def cmd_verify(args, settings: Settings, catalog: Catalog) -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -128,6 +156,21 @@ def cmd_verify(args, settings: Settings, catalog: Catalog) -> int:
             wanted = set(tags_for(slot, day))
             if slot.enabled and wanted and not any(wanted & set(s.tags) for s in catalog):
                 warnings.append(f"slot {slot.name} el {day:%a}: sin historias para {sorted(wanted)}")
+
+    if settings.reels is not None:
+        from igstories import reels as reelmod
+
+        for video in reelmod.list_reels(settings.reels):
+            info = images.probe_video(video)
+            if info and not images.video_is_compliant(info):
+                errors.append(f"reel {video.name}: no cumple el formato de Instagram (9:16, H.264, ≤60 s)")
+            if info and not info["acodec"] and settings.reels.music_dir:
+                warnings.append(f"reel {video.name}: sin música todavía (se agrega sola al publicar)")
+            if video.stat().st_size > 100 * 2**20:
+                errors.append(f"reel {video.name}: pesa más de 100 MB")
+        left = len(reelmod.pending_reels(settings.reels, History.load(settings.history_file)))
+        if left < 4:
+            warnings.append(f"quedan {left} reel(s) sin publicar en {settings.reels.dir.name}/; sube más")
 
     if args.online:
         provider = make_provider(settings.hosting)
@@ -310,6 +353,10 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("prepare", help="convierte assets/source a JPEG 1080x1920 en assets/ready")
     s.add_argument("--force", action="store_true")
     s.set_defaults(func=cmd_prepare)
+
+    s = sub.add_parser("reels-music", help="agrega música a los reels sin audio")
+    s.add_argument("--force", action="store_true", help="reemplaza también la música existente")
+    s.set_defaults(func=cmd_reels_music)
 
     s = sub.add_parser("verify", help="valida configuración, catálogo e imágenes")
     s.add_argument("--online", action="store_true", help="comprueba que cada URL pública responde")

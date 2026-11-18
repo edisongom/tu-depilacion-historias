@@ -19,11 +19,12 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
+from igstories import reels as reelmod
 from igstories.catalog import Catalog, Story
 from igstories.config import Settings
 from igstories.graph import AmbiguousResult, ContainerError, GraphClient, GraphError
 from igstories.history import Entry, History, utcnow
-from igstories.hosting import HostingError, UrlProvider, preflight
+from igstories.hosting import HostingError, StaticUrlProvider, UrlProvider, preflight
 from igstories.notify import Notifier, NullNotifier
 from igstories.schedule import (
     DueSlot,
@@ -69,6 +70,7 @@ def build_plan(
 ) -> list[PlanRow]:
     """Simula el calendario de los próximos ``days`` días sin red ni token."""
     overlay = OverlayHistory(history)
+    planned_reels: set[str] = set()
     rows: list[PlanRow] = []
     for offset in range(days):
         day = start + dt.timedelta(days=offset)
@@ -79,6 +81,16 @@ def build_plan(
             if existing and existing.status in ("published", "unknown", "publishing"):
                 rows.append(
                     PlanRow(day, slot.name, scheduled_time(slot, day), existing.story_id, "history", existing.status)
+                )
+                continue
+            if slot.format == "reel":
+                left = reelmod.pending_reels(settings.reels, history, planned_reels)
+                rid = reelmod.reel_id(left[0]) if left else None
+                if rid:
+                    planned_reels.add(rid)
+                rows.append(
+                    PlanRow(day, slot.name, scheduled_time(slot, day), rid,
+                            "next-reel" if rid else "no-reels-left", "planned")
                 )
                 continue
             pick = pick_story(
@@ -149,7 +161,7 @@ class Publisher:
 
         reconciled = False
         if entry and entry.status == "publishing":
-            entry = self._reconcile(entry)
+            entry = self._reconcile(entry, reel=slot.format == "reel")
             reconciled = True
         if entry:
             if reconciled and entry.status == "published":
@@ -160,6 +172,9 @@ class Publisher:
                 return Outcome(key, entry.story_id, "unknown", "requiere revisión manual")
             if entry.status in ("failed", "pending") and entry.attempts >= slot.max_attempts:
                 return Outcome(key, entry.story_id, "failed", "intentos agotados")
+
+        if slot.format == "reel":
+            return self._handle_reel(due, entry, dry_run)
 
         if entry and entry.story_id and entry.story_id in self.catalog:
             story = self.catalog.get(entry.story_id)  # reintento: misma historia
@@ -230,6 +245,74 @@ class Publisher:
         self.notifier.notify(f"Historia publicada: {story.id} ({entry.key})", level="info")
         return Outcome(entry.key, story.id, "published", entry.media_id or "")
 
+    # ------------------------------------------------------------------------------ reels
+    def _handle_reel(self, due: DueSlot, entry: Entry | None, dry_run: bool) -> Outcome:
+        cfg = self.settings.reels
+        key = due.key
+        if entry and entry.story_id:
+            video = reelmod.path_for(cfg, entry.story_id)  # reintento: el mismo reel
+        else:
+            left = reelmod.pending_reels(cfg, self.history)
+            if not left:
+                msg = f"{key}: no quedan reels nuevos en {cfg.dir.name}/ — sube más videos"
+                log.warning(msg)
+                if not dry_run:
+                    self.history.put(
+                        Entry(key, due.day.isoformat(), due.slot.name, None, "skipped", error="no-reels-left")
+                    )
+                    self.notifier.notify(msg, level="warning")
+                return Outcome(key, None, "skipped", "no-reels-left")
+            video = left[0]
+        entry = entry or Entry(key, due.day.isoformat(), due.slot.name, reelmod.reel_id(video))
+        entry.story_id = reelmod.reel_id(video)
+        entry.attempts += 1
+        entry.status, entry.error = "pending", None
+        acc = self.settings.account
+        try:
+            if not video.exists():
+                raise HostingError(f"No existe el reel: {video}")
+            url = StaticUrlProvider(cfg.base_url).url_for(video)
+            if self.check_url:
+                preflight(url, video=True)
+            caption = reelmod.caption_for(cfg, video)
+            if dry_run:
+                return Outcome(key, entry.story_id, "dry-run", f"{url} | {caption[:60]}")
+            entry.container_id = self.client.create_reel_container(
+                video_url=url, caption=caption, share_to_feed=cfg.share_to_feed
+            )
+            self.history.put(entry)
+            self.history.save()
+            self.client.wait_until_ready(
+                entry.container_id, interval=acc.poll_interval_s, timeout=max(acc.poll_timeout_s, 420.0)
+            )
+            entry.status = "publishing"
+            entry.publish_started_at = utcnow().isoformat(timespec="seconds")
+            self.history.put(entry)
+            self.history.save()
+            entry.media_id = self.client.publish(entry.container_id)
+        except AmbiguousResult as exc:
+            entry.status, entry.error = "publishing", f"resultado ambiguo: {exc}"
+            self.history.put(entry)
+            self.history.save()
+            entry = self._reconcile(entry, reel=True)
+            if entry.status == "published":
+                return Outcome(key, entry.story_id, "published", "confirmado tras reconciliar")
+            if entry.status == "unknown":
+                self.notifier.notify(f"Revisa Instagram: no se pudo confirmar el reel {entry.story_id}.", level="error")
+                return Outcome(key, entry.story_id, "unknown", str(exc))
+            return Outcome(key, entry.story_id, "failed", "no se publicó; se reintentará")
+        except (GraphError, ContainerError, HostingError, ValueError) as exc:
+            return self._failed(entry, exc, due.slot.max_attempts)
+
+        entry.status = "published"
+        with contextlib.suppress(GraphError):
+            entry.permalink = self.client.media_info(entry.media_id).get("permalink")
+        self.history.put(entry)
+        self.history.save()
+        log.info("Reel publicado %s (%s) media_id=%s", key, entry.story_id, entry.media_id)
+        self.notifier.notify(f"Reel publicado: {video.name} ({key})", level="info")
+        return Outcome(key, entry.story_id, "published", entry.media_id or "")
+
     # ---------------------------------------------------------------------- fallos / estado
     def _failed(self, entry: Entry, exc: Exception, max_attempts: int) -> Outcome:
         detail = exc.describe() if isinstance(exc, GraphError) else str(exc)
@@ -260,15 +343,18 @@ class Publisher:
             return Outcome(entry.key, entry.story_id, "unknown", str(exc))
         return Outcome(entry.key, entry.story_id, "failed", "no se publicó; se reintentará")
 
-    def _reconcile(self, entry: Entry) -> Entry:
-        """Decide qué pasó con un intento en estado ``publishing`` mirando las historias activas."""
+    def _reconcile(self, entry: Entry, *, reel: bool = False) -> Entry:
+        """Decide qué pasó con un intento ``publishing`` mirando las historias (o reels) recientes."""
         started = (
             _parse_ts(entry.publish_started_at)
             if entry.publish_started_at
             else utcnow() - dt.timedelta(hours=1)
         )
         try:
-            stories = self.client.active_stories()
+            if reel:
+                stories = [m for m in self.client.recent_media() if m.get("media_product_type") == "REELS"]
+            else:
+                stories = self.client.active_stories()
         except GraphError as exc:
             log.warning("No se pudo reconciliar %s: %s", entry.key, exc)
             entry.status = "unknown"

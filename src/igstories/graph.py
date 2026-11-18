@@ -214,6 +214,16 @@ class GraphClient:
         params["image_url" if image_url else "video_url"] = image_url or video_url
         return self._request("POST", f"{self.ig_user_id}/media", params=params)["id"]
 
+    def create_reel_container(self, *, video_url: str, caption: str = "", share_to_feed: bool = True) -> str:
+        params = {
+            "media_type": "REELS",
+            "video_url": video_url,
+            "share_to_feed": "true" if share_to_feed else "false",
+        }
+        if caption:
+            params["caption"] = caption
+        return self._request("POST", f"{self.ig_user_id}/media", params=params)["id"]
+
     def container_status(self, container_id: str) -> dict:
         return self._request("GET", container_id, params={"fields": "status_code,status"})
 
@@ -250,6 +260,16 @@ class GraphClient:
         """Historias activas (últimas 24 h). Se usa para reconciliar publicaciones ambiguas."""
         body = self._request(
             "GET", f"{self.ig_user_id}/stories", params={"fields": "id,timestamp,permalink"}
+        )
+        return body.get("data", [])
+
+
+    def recent_media(self, limit: int = 10) -> list[dict]:
+        """Últimas publicaciones del feed (reels incluidos). Para reconciliar reels ambiguos."""
+        body = self._request(
+            "GET",
+            f"{self.ig_user_id}/media",
+            params={"fields": "id,timestamp,permalink,media_product_type", "limit": str(limit)},
         )
         return body.get("data", [])
 

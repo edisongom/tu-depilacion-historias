@@ -116,7 +116,7 @@ class FakeGraph:
             return h._send(200, forced)
 
         if op == "create":
-            if params.get("media_type") != "STORIES" or not (params.get("image_url") or params.get("video_url")):
+            if params.get("media_type") not in ("STORIES", "REELS") or not (params.get("image_url") or params.get("video_url")):
                 return h._send(400, {"error": {"message": "bad params", "code": 100}})
             self._n += 1
             return h._send(200, {"id": f"container-{self._n}"})

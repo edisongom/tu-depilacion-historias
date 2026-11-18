@@ -66,6 +66,16 @@ window = ["20:00", "23:00"]
 grace_minutes = 600
 max_attempts = 3
 
+# Reel semanal: todos los jueves a las 20:00 (hora de Chile) sale el siguiente video de assets/reels/.
+# No se repiten; si se acaban, ese jueves no sale nada y llega un aviso.
+[[slots]]
+name = "jueves-reel"
+format = "reel"
+time = "20:00"
+days = ["thu"]
+grace_minutes = 240                # si GitHub se atrasa, publica hasta las 00:00; más tarde, lo salta
+max_attempts = 3
+
 # Ejemplo: contenido distinto según el día de la semana
 # [slots.tags_by_weekday]
 # mon = ["precios"]
@@ -75,6 +85,18 @@ max_attempts = 3
 # fri = ["info"]
 # sat = ["mitos"]
 # sun = ["info"]
+
+# ---------------------------------------------------------------------- reels (feed)
+[reels]
+dir = "assets/reels"               # sube aquí los .mp4 (ya en 9:16, ≤60 s). Orden: alfabético
+base_url = "https://raw.githubusercontent.com/edisongom/tu-depilacion-historias/main/assets/reels"
+share_to_feed = true
+music_dir = "assets/music"         # canciones; todo reel subido sin audio recibe una antes de publicarse
+# Descripción de todos los reels. Para uno distinto, crea un .txt con el mismo nombre del video.
+caption = """
+Agende su hora al +56978828869,
+15 años de experiencia, cientos de clientas felices, espacio privado con estacionamiento y locomoción pública a 2 minutos #chile #depilaciónchile #laserena #depilacionfacial #depilacioncera
+"""
 
 # ---------------------------------------------------------------------- overrides (excepciones)
 # [[overrides]]
