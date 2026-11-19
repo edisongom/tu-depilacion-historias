@@ -910,6 +910,20 @@
       "publish_started_at": "2026-11-18T17:56:58+00:00",
       "updated_at": "2026-11-18T17:57:01+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-18:noche",
+      "date": "2026-11-18",
+      "slot": "noche",
+      "story_id": "18-cartas-clientas-portada",
+      "status": "failed",
+      "attempts": 1,
+      "container_id": "18109519667363588",
+      "media_id": null,
+      "permalink": null,
+      "publish_started_at": "2026-11-19T07:54:31+00:00",
+      "updated_at": "2026-11-19T07:54:31+00:00",
+      "error": "The requested resource does not exist [http=400, code=24, subcode=2207006, type=OAuthException, trace=AfBFN_pC1h6PtvFWl_G6eJi]"
     }
   ]
 }
