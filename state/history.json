@@ -926,6 +926,20 @@
       "error": "The requested resource does not exist [http=400, code=24, subcode=2207006, type=OAuthException, trace=AfBFN_pC1h6PtvFWl_G6eJi]"
     },
     {
+      "key": "2026-11-19:jueves-reel",
+      "date": "2026-11-19",
+      "slot": "jueves-reel",
+      "story_id": "reel:a01-chat-reservar.mp4",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109579001363588",
+      "media_id": "18078592199721836",
+      "permalink": "https://www.instagram.com/reel/Df8StxlTFLo/",
+      "publish_started_at": "2026-11-19T23:46:15+00:00",
+      "updated_at": "2026-11-19T23:46:24+00:00",
+      "error": null
+    },
+    {
       "key": "2026-11-19:manana",
       "date": "2026-11-19",
       "slot": "manana",
