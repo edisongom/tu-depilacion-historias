@@ -952,6 +952,20 @@
       "publish_started_at": "2026-11-19T17:16:56+00:00",
       "updated_at": "2026-11-19T17:16:59+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-19:noche",
+      "date": "2026-11-19",
+      "slot": "noche",
+      "story_id": "11-quiz-donde-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109591643363588",
+      "media_id": "18137560165783289",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4034306963294500645",
+      "publish_started_at": "2026-11-20T03:54:54+00:00",
+      "updated_at": "2026-11-20T03:54:58+00:00",
+      "error": null
     }
   ]
 }
