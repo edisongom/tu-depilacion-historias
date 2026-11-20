@@ -966,6 +966,20 @@
       "publish_started_at": "2026-11-20T03:54:54+00:00",
       "updated_at": "2026-11-20T03:54:58+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-20:manana",
+      "date": "2026-11-20",
+      "slot": "manana",
+      "story_id": "10-quiz-afeitarse-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109635680363588",
+      "media_id": "18120937004044225",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4034673427680512704",
+      "publish_started_at": "2026-11-20T16:03:01+00:00",
+      "updated_at": "2026-11-20T16:03:04+00:00",
+      "error": null
     }
   ]
 }
