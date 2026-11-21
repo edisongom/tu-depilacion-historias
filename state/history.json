@@ -994,6 +994,20 @@
       "publish_started_at": "2026-11-21T03:28:05+00:00",
       "updated_at": "2026-11-21T03:28:08+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-21:manana",
+      "date": "2026-11-21",
+      "slot": "manana",
+      "story_id": "19-postit-afeitar-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109741178363588",
+      "media_id": "18047413904831623",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4035489920424872316",
+      "publish_started_at": "2026-11-21T19:05:14+00:00",
+      "updated_at": "2026-11-21T19:05:17+00:00",
+      "error": null
     }
   ]
 }
