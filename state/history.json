@@ -980,6 +980,20 @@
       "publish_started_at": "2026-11-20T16:03:01+00:00",
       "updated_at": "2026-11-20T16:03:04+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-20:noche",
+      "date": "2026-11-20",
+      "slot": "noche",
+      "story_id": "17-cartas-zona-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109680398363588",
+      "media_id": "18131885119832579",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4035018236596451727",
+      "publish_started_at": "2026-11-21T03:28:05+00:00",
+      "updated_at": "2026-11-21T03:28:08+00:00",
+      "error": null
     }
   ]
 }
