@@ -1022,6 +1022,20 @@
       "publish_started_at": "2026-11-22T06:30:12+00:00",
       "updated_at": "2026-11-22T06:30:16+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-22:manana",
+      "date": "2026-11-22",
+      "slot": "manana",
+      "story_id": "14-pov-primera-vez-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18109818236363588",
+      "media_id": "18035920028858230",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4036086974239218082",
+      "publish_started_at": "2026-11-22T14:51:28+00:00",
+      "updated_at": "2026-11-22T14:51:31+00:00",
+      "error": null
     }
   ]
 }
