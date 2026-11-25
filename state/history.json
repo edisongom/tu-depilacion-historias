@@ -1092,6 +1092,20 @@
       "publish_started_at": "2026-11-25T01:33:11+00:00",
       "updated_at": "2026-11-25T01:33:14+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-25:manana",
+      "date": "2026-11-25",
+      "slot": "manana",
+      "story_id": "12-calendario-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18110110313363588",
+      "media_id": "17957718363036304",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4038420250429242300",
+      "publish_started_at": "2026-11-25T20:07:15+00:00",
+      "updated_at": "2026-11-25T20:07:17+00:00",
+      "error": null
     }
   ]
 }
