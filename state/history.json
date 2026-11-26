@@ -1106,6 +1106,20 @@
       "publish_started_at": "2026-11-25T20:07:15+00:00",
       "updated_at": "2026-11-25T20:07:17+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-25:noche",
+      "date": "2026-11-25",
+      "slot": "noche",
+      "story_id": "02-buscador-duele-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18110128790363588",
+      "media_id": "18035571749855866",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4038621290457593597",
+      "publish_started_at": "2026-11-26T02:46:42+00:00",
+      "updated_at": "2026-11-26T02:46:46+00:00",
+      "error": null
     }
   ]
 }
