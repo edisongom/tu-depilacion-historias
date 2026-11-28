@@ -1176,6 +1176,20 @@
       "publish_started_at": "2026-11-28T04:41:38+00:00",
       "updated_at": "2026-11-28T04:41:41+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-28:manana",
+      "date": "2026-11-28",
+      "slot": "manana",
+      "story_id": "09-barras-sesiones-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18110350937363588",
+      "media_id": "18180334036477062",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4040411654781177663",
+      "publish_started_at": "2026-11-28T14:03:49+00:00",
+      "updated_at": "2026-11-28T14:03:52+00:00",
+      "error": null
     }
   ]
 }
