@@ -1162,6 +1162,20 @@
       "publish_started_at": "2026-11-27T13:45:47+00:00",
       "updated_at": "2026-11-27T13:45:50+00:00",
       "error": null
+    },
+    {
+      "key": "2026-11-27:noche",
+      "date": "2026-11-27",
+      "slot": "noche",
+      "story_id": "14-receta-post-portada",
+      "status": "published",
+      "attempts": 1,
+      "container_id": "18110317958363588",
+      "media_id": "17875594887642992",
+      "permalink": "https://www.instagram.com/stories/tu_depilacion/4040128691925572696",
+      "publish_started_at": "2026-11-28T04:41:38+00:00",
+      "updated_at": "2026-11-28T04:41:41+00:00",
+      "error": null
     }
   ]
 }
